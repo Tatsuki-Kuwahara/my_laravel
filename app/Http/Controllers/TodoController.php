@@ -5,9 +5,14 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Todo;
+use Illuminate\Support\Facades\Auth;
 
 class TodoController extends Controller
 {
+    public function __construct()
+    {
+      $this->middleware(['auth']);
+    }
     /**
      * Display a listing of the resource.
      *
@@ -15,7 +20,7 @@ class TodoController extends Controller
      */
     public function index()
     {
-      $todos = Todo::getAllOrderByDeadline();
+      $todos = Todo::getMyAllOrderByDeadline();
       return view('todo.index', [
         'todos' => $todos
       ]);
@@ -51,9 +56,11 @@ class TodoController extends Controller
           ->withInput()
           ->withErrors($validator);
       }
+
+      $data = $request->merge(['user_id' => Auth::user()->id])->all();
       // create()あ最初から用意されている関数
       // 戻り値は挿入されたレコードの情報
-      $result = Todo::create($request->all());
+      $result = Todo::create($data);
 
       return redirect()->route('todo.index');
     }
