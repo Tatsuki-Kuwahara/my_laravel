@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
+use App\Models\Todo;
 
 class TodoController extends Controller
 {
@@ -13,8 +15,9 @@ class TodoController extends Controller
      */
     public function index()
     {
+      $todos = Todo::getAllOrderByDeadline();
       return view('todo.index', [
-        'todos' => []
+        'todos' => $todos
       ]);
     }
 
@@ -36,7 +39,23 @@ class TodoController extends Controller
      */
     public function store(Request $request)
     {
-        //
+      // バリデーション
+      $validator = Validator::make($request->all(), [
+        'todo' => 'required | max:191',
+        'deadline' => 'required',
+      ]);
+      // バリデーション：エラー
+      if ($validator->fails()) {
+        return redirect()
+          ->route('todo.create')
+          ->withInput()
+          ->withErrors($validator);
+      }
+      // create()あ最初から用意されている関数
+      // 戻り値は挿入されたレコードの情報
+      $result = Todo::create($request->all());
+
+      return redirect()->route('todo.index');
     }
 
     /**
@@ -47,7 +66,8 @@ class TodoController extends Controller
      */
     public function show($id)
     {
-        //
+      $todo = Todo::find($id);
+      return view('todo.show', ['todo' => $todo]);
     }
 
     /**
@@ -58,7 +78,8 @@ class TodoController extends Controller
      */
     public function edit($id)
     {
-        //
+      $todo = Todo::find($id);
+      return view('todo.edit', ['todo' => $todo]);
     }
 
     /**
@@ -70,7 +91,19 @@ class TodoController extends Controller
      */
     public function update(Request $request, $id)
     {
-        //
+      $validator = Validator::make($request->all(), [
+        'todo' => 'required | max:191',
+        'deadline' => 'required',
+      ]);
+      if ($validator->fails()) {
+        return redirect()
+          ->route('todo.edit', $id)
+          ->withInput()
+          ->withErrors($validator);
+      }
+
+      $result = Todo::find($id)->update($request->all());
+      return redirect()->route('todo.index');
     }
 
     /**
@@ -81,6 +114,7 @@ class TodoController extends Controller
      */
     public function destroy($id)
     {
-        //
+      $result = Todo::find($id)->delete();
+      return redirect()->route('todo.index');
     }
 }
